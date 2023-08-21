@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<?define HagisYDNSUpdater_TargetDir=$(var.HagisYDNSUpdater.TargetDir)?>
+	<Product Id="*" Name="HagisYDNSUpdater_Installer" Language="1033" Version="1.0.0.0" Manufacturer="Hagi" UpgradeCode="2330cb92-2606-45cc-8d43-6d98c3366844">
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+		<MediaTemplate EmbedCab="yes" />
+		<Feature Id="ProductFeature" Title="HagisYDNSUpdater_Installer" Level="1">
+			<ComponentGroupRef Id="ProductComponents" />
+			<ComponentGroupRef Id="INSTALLFOLDER_files" />
+		</Feature>
+	</Product>
+	<Fragment>
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFilesFolder">
+				<Directory Id="INSTALLFOLDER" Name="HagisYDNSUpdater" />
+			</Directory>
+		</Directory>
+	</Fragment>
+	<Fragment>
+		<ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+		</ComponentGroup>
+	</Fragment>
+	<Fragment>
+		<ComponentGroup Id="INSTALLFOLDER_files" Directory="INSTALLFOLDER">
+			<Component Id="HagisYDNSUpdater.exe" Guid="c43fca01-8486-4144-a15d-071b2740bade">
+				<File Id="HagisYDNSUpdater.exe" Name="HagisYDNSUpdater.exe" Source="$(var.HagisYDNSUpdater_TargetDir)HagisYDNSUpdater.exe" />
+				<ServiceInstall Id="serviceInstaller1" Type="ownProcess" Name="HagisYdnsUpdater" DisplayName="YDNS Updater" Start="auto" Description="Updates YDNS Entries in a set interval." ErrorControl="normal"/>
+				<ServiceControl Id="StartService" Stop="both" Remove="uninstall" Name="HagisYdnsUpdater" Wait="no"/>
+			</Component>
+			<Component Id="HagisYDNSUpdater.exe.config" Guid="85b23d10-fb0c-4a5b-a113-eb87a6bf1862">
+				<File Id="HagisYDNSUpdater.exe.config" Name="HagisYDNSUpdater.exe.config" Source="$(var.HagisYDNSUpdater_TargetDir)HagisYDNSUpdater.exe.config" />
+			</Component>
+		</ComponentGroup>
+	</Fragment>
+</Wix>
