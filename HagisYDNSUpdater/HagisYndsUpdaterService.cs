@@ -39,19 +39,41 @@ namespace HagisYDNSUpdater
             Hashtable settings = ConfigurationManager.GetSection("YDNSSettings") as Hashtable;
             bool logging = bool.Parse(settings["Logging"].ToString());
             WebClient webClient = new WebClient();
-            string myIP = webClient.DownloadString("http://myexternalip.com/raw");
+            string myIP = webClient.DownloadString("https://ydns.io/api/v1/ip");
             string authentication = $"{settings["APIUser"]}:{settings["APIKey"]}";
             authentication = Convert.ToBase64String(Encoding.ASCII.GetBytes(authentication));
             webClient.Headers.Add(HttpRequestHeader.Authorization, "Basic " + authentication);
             Hashtable hosts = ConfigurationManager.GetSection("Hosts") as Hashtable;
             if (logging)
-                WriteToFile("current IP: " + myIP);
+                WriteToFile($"current IP: {myIP}");
             foreach (DictionaryEntry host in hosts)
-            {
-                webClient.DownloadString(string.Format("https://ydns.io/api/v1/update/?host={0}&ip={1}", host.Key.ToString(), myIP));
-                if (logging)
-                    WriteToFile($"updated host: {host}");
-            }
+                try
+                {
+                    string result = webClient.DownloadString(string.Format("https://ydns.io/api/v1/update/?host={0}", host.Key.ToString()));
+                    if (logging)
+                        WriteToFile($"updated host: {host}");
+                }
+                catch (Exception exception)
+                {
+                    if (exception is WebException webException)
+                        switch (((HttpWebResponse)webException.Response).StatusCode)
+                        {
+                            case HttpStatusCode.NotFound:
+                                WriteToFile("The action could not be performed because the host you'd like to update cannot be found. Please make sure the record exists and is of the correct type: A for IPv4, AAAA for IPv6.");
+                                break;
+                            case HttpStatusCode.Unauthorized:
+                                WriteToFile("The action could not be performed due to authentication issues.");
+                                break;
+                            case HttpStatusCode.BadRequest:
+                                WriteToFile("The action could not be performed due to invalid input parameters.");
+                                break;
+                            default:
+                                WriteToFile("The Web Server returned an error: " + webException);
+                                break;
+                        }
+                    else
+                        WriteToFile(exception.ToString());
+                }
         }
 
         /// <summary>

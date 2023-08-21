@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 	<?define HagisYDNSUpdater_TargetDir=$(var.HagisYDNSUpdater.TargetDir)?>
-	<Product Id="*" Name="HagisYDNSUpdater_Installer" Language="1033" Version="1.0.0.0" Manufacturer="Hagi" UpgradeCode="2330cb92-2606-45cc-8d43-6d98c3366844">
+	<Product Id="*" Name="HagisYDNSUpdater" Language="1033" Version="1.0.0.0" Manufacturer="Hagi" UpgradeCode="2330cb92-2606-45cc-8d43-6d98c3366844">
 		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
 		<MediaTemplate EmbedCab="yes" />
-		<Feature Id="ProductFeature" Title="HagisYDNSUpdater_Installer" Level="1">
+		<Feature Id="ProductFeature" Title="HagisYDNSUpdater" Level="1">
 			<ComponentGroupRef Id="ProductComponents" />
 			<ComponentGroupRef Id="INSTALLFOLDER_files" />
 		</Feature>
