@@ -48,7 +48,7 @@ namespace HagisYDNSUpdater
                 WriteToFile("current IP: " + myIP);
             foreach (DictionaryEntry host in hosts)
             {
-                webClient.DownloadString(string.Format("https://ydns.io/api/v1/update/?host={0}&ip={1}", host.Value.ToString(), myIP));
+                webClient.DownloadString(string.Format("https://ydns.io/api/v1/update/?host={0}&ip={1}", host.Key.ToString(), myIP));
                 if (logging)
                     WriteToFile($"updated host: {host}");
             }
