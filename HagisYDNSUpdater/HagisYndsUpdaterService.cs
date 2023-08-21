@@ -51,7 +51,7 @@ namespace HagisYDNSUpdater
                 {
                     string result = webClient.DownloadString(string.Format("https://ydns.io/api/v1/update/?host={0}", host.Key.ToString()));
                     if (logging)
-                        WriteToFile($"updated host: {host}");
+                        WriteToFile($"updated host: {host.Key.ToString()}");
                 }
                 catch (Exception exception)
                 {
