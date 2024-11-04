@@ -1,57 +1,75 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Net;
 using System.ServiceProcess;
-using System.Text;
 using System.Timers;
 
 namespace HagisYDNSUpdater
 {
     public partial class HagisYdnsUpdaterService : ServiceBase
     {
-        Timer timer;
+        #region Members
+
+        private Timer _timer;
+        private YdnsSettings _settings;
+
+        #endregion
+
+        #region Constructor
+
         public HagisYdnsUpdaterService()
             => InitializeComponent();
+
+        #endregion
+
+        #region Protected Timer Methods
 
         protected override void OnStart(string[] args)
         {
             WriteToFile($"Service is started at {DateTime.Now}");
-            Timer_Elapsed(null, null);
             Hashtable settings = ConfigurationManager.GetSection("YDNSSettings") as Hashtable;
             int timerInterval = int.Parse(settings["timerInterval"].ToString()) * 1000;
-            timer = new Timer(timerInterval)
+            _timer = new Timer(timerInterval)
             {
                 AutoReset = true,
                 Enabled = true
             };
-            timer.Elapsed += new ElapsedEventHandler(Timer_Elapsed);
+            _settings = ReadSettings();
+            _timer.Elapsed += new ElapsedEventHandler(Timer_Elapsed);
+            Timer_Elapsed(null, null);
         }
+
+        /// <summary>
+        /// Starts in debug session.
+        /// </summary>
+        public void OnDebug()
+            => OnStart(null);
+
+        #endregion
+
+        #region Private Methods
 
         /// <summary>
         /// Pushes the external ip to all configured hosts.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void Timer_Elapsed(object sender, ElapsedEventArgs e)
+        private void Timer_Elapsed(object sender,
+                                   ElapsedEventArgs e)
         {
-            Hashtable settings = ConfigurationManager.GetSection("YDNSSettings") as Hashtable;
-            bool logging = bool.Parse(settings["Logging"].ToString());
             WebClient webClient = new WebClient();
             string myIP = webClient.DownloadString("https://ydns.io/api/v1/ip");
-            string authentication = $"{settings["APIUser"]}:{settings["APIKey"]}";
-            authentication = Convert.ToBase64String(Encoding.ASCII.GetBytes(authentication));
-            webClient.Headers.Add(HttpRequestHeader.Authorization, "Basic " + authentication);
-            Hashtable hosts = ConfigurationManager.GetSection("Hosts") as Hashtable;
-            if (logging)
+            webClient.Headers.Add(HttpRequestHeader.Authorization, $"Basic {_settings.Authentication}");
+
+            if (_settings.Logging)
                 WriteToFile($"current IP: {myIP}");
-            foreach (DictionaryEntry host in hosts)
+            foreach (KeyValuePair<string, string> host in _settings.Hosts)
                 try
                 {
-                    string result = webClient.DownloadString(string.Format("https://ydns.io/api/v1/update/?host={0}", host.Key.ToString()));
-                    if (logging)
-                        WriteToFile($"updated host: {host.Key.ToString()}");
+                    string result = webClient.DownloadString(string.Format("https://ydns.io/api/v1/update/?host={0}", host.Key));
+                    if (_settings.Logging)
+                        WriteToFile($"updated host: {host.Key}");
                 }
                 catch (Exception exception)
                 {
@@ -68,7 +86,7 @@ namespace HagisYDNSUpdater
                                 WriteToFile("The action could not be performed due to invalid input parameters.");
                                 break;
                             default:
-                                WriteToFile("The Web Server returned an error: " + webException);
+                                WriteToFile($"The Web Server returned an error: {webException}");
                                 break;
                         }
                     else
@@ -77,15 +95,32 @@ namespace HagisYDNSUpdater
         }
 
         /// <summary>
+        /// Reads settings file.
+        /// </summary>
+        private YdnsSettings ReadSettings()
+        {
+            Hashtable settings = ConfigurationManager.GetSection("YDNSSettings") as Hashtable;
+            Hashtable hosts = ConfigurationManager.GetSection("Hosts") as Hashtable;
+            YdnsSettings ydnsSettings = new YdnsSettings(hosts)
+            {
+                Logging = bool.Parse(settings["Logging"].ToString()),
+                ApiUser = settings["APIUser"].ToString(),
+                ApiKey = settings["APIKey"].ToString()
+            };
+            return ydnsSettings;
+        }
+
+        /// <summary>
         /// Writes the message to a log file in a log folder in the installation directory.
         /// </summary>
-        /// <param name="Message"></param>
-        public void WriteToFile(string Message)
+        private void WriteToFile(string Message)
         {
             Message = $"{DateTime.Now} — {Message}";
             Directory.CreateDirectory($"{AppDomain.CurrentDomain.BaseDirectory}\\Logs");
             using (StreamWriter streamWriter = File.AppendText($"{AppDomain.CurrentDomain.BaseDirectory}\\Logs\\ServiceLog_{DateTime.Now.Date.ToShortDateString()}.log"))
                 streamWriter.WriteLine(Message);
         }
+
+        #endregion
     }
 }
