@@ -1,6 +1,6 @@
 # HagisYDNSUpdater
 
-This tool requires .NET Framework 4.8 installed.
+This tool requires .NET Framework 4.8 installed. Download from Microsoft here: https://dotnet.microsoft.com/en-us/download/dotnet-framework/net481
 
 Features: Updates one or multiple records on ydns.io in a configurable interval with your external IP address.
 
